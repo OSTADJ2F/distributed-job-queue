@@ -5,7 +5,16 @@ __pycache__/
 .coverage
 htmlcov/
 .env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+secrets*.yml
+secrets*.yaml
 .venv/
 dist/
 *.egg-info/
-

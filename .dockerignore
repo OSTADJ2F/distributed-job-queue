@@ -1,6 +1,16 @@
 .git
 .github
 .env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+secrets*.yml
+secrets*.yaml
 .venv
 __pycache__
 *.pyc

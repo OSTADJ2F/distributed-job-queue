@@ -69,6 +69,7 @@ Delivery is **at least once after a crash**. The queue protects its own state fr
 ## Quick start
 
 You need Docker with Compose v2. The repository includes safe local defaults, so no secrets are needed for local development.
+Published development ports bind to `127.0.0.1` and are not exposed to the local network.
 
 ```bash
 git clone https://github.com/OSTADJ2F/distributed-job-queue.git
