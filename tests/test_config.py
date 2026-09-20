@@ -12,3 +12,11 @@ def test_managed_postgres_url_selects_asyncpg_driver() -> None:
 def test_explicit_sqlalchemy_driver_is_preserved() -> None:
     url = "postgresql+asyncpg://queue:secret@localhost/queue"
     assert Settings(database_url=url, _env_file=None).database_url == url
+
+
+def test_backoff_schedule_accepts_compose_csv_environment(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("BACKOFF_SCHEDULE_SECONDS", "5,30,300")
+    settings = Settings(_env_file=None)
+    assert settings.backoff_schedule_seconds == (5, 30, 300)
