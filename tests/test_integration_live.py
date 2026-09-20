@@ -44,6 +44,8 @@ async def test_one_hundred_jobs_are_processed_once_across_workers() -> None:
                 for index in range(100)
             )
         )
+        for response in responses:
+            response.raise_for_status()
         ids = [response.json()["id"] for response in responses]
         jobs = await asyncio.gather(*(wait_for_terminal(client, job_id) for job_id in ids))
         assert all(job["status"] == "completed" for job in jobs)
@@ -66,6 +68,8 @@ async def test_retry_and_idempotency() -> None:
     async with httpx.AsyncClient(base_url=BASE_URL, timeout=10) as client:
         first = await client.post("/jobs", json=body, headers={"Idempotency-Key": key})
         duplicate = await client.post("/jobs", json=body, headers={"Idempotency-Key": key})
+        first.raise_for_status()
+        duplicate.raise_for_status()
         assert first.json()["id"] == duplicate.json()["id"]
         job = await wait_for_terminal(client, first.json()["id"], timeout_seconds=45)
         assert job["status"] == "completed"
@@ -84,6 +88,7 @@ async def test_timeout_reaches_dead_letter_queue() -> None:
                 "max_attempts": 1,
             },
         )
+        response.raise_for_status()
         job = await wait_for_terminal(client, response.json()["id"])
         assert job["status"] == "failed"
         assert "TimeoutError" in job["error_message"]

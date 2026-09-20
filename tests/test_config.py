@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from app.config import Settings
 
 
@@ -20,3 +23,9 @@ def test_backoff_schedule_accepts_compose_csv_environment(
     monkeypatch.setenv("BACKOFF_SCHEDULE_SECONDS", "5,30,300")
     settings = Settings(_env_file=None)
     assert settings.backoff_schedule_seconds == (5, 30, 300)
+
+
+def test_backoff_schedule_cannot_be_empty(monkeypatch) -> None:
+    monkeypatch.setenv("BACKOFF_SCHEDULE_SECONDS", "")
+    with pytest.raises(ValidationError, match="at least 1 item"):
+        Settings(_env_file=None)

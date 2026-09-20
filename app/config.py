@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     worker_heartbeat_seconds: int = Field(default=5, ge=1)
     recovery_interval_seconds: int = Field(default=10, ge=1)
     default_job_timeout_seconds: int = Field(default=30, ge=1, le=3600)
-    backoff_schedule_seconds: Annotated[tuple[int, ...], NoDecode] = (5, 30, 300)
+    backoff_schedule_seconds: Annotated[tuple[int, ...], NoDecode] = Field(
+        default=(5, 30, 300), min_length=1
+    )
     worker_concurrency: int = Field(default=4, ge=1, le=64)
 
     @field_validator("database_url", mode="before")

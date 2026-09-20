@@ -31,9 +31,20 @@ dev = [
 packages = ["app"]
 
 [tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
 asyncio_mode = "auto"
 markers = ["integration: requires PostgreSQL and Redis"]
 testpaths = ["tests"]
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+skip_covered = true
 
 [tool.ruff]
 line-length = 100
@@ -41,4 +52,3 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
-
