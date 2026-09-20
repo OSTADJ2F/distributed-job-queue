@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Queue Control Room</title>
+  <style>
+    :root { color-scheme: dark; --ink:#f3f6ef; --muted:#91a09a; --panel:#14201e; --line:#29403b; --lime:#b8f34a; --red:#ff6b6b; }
+    * { box-sizing:border-box } body { margin:0; font:15px/1.45 Inter,ui-sans-serif,system-ui; background:#08100f; color:var(--ink) }
+    main { width:min(1120px,calc(100% - 32px)); margin:40px auto }
+    header { display:flex; justify-content:space-between; gap:24px; align-items:end; margin-bottom:28px }
+    h1 { margin:0; font-size:clamp(28px,5vw,54px); letter-spacing:-.045em } .eyebrow { color:var(--lime); text-transform:uppercase; letter-spacing:.16em; font-size:12px }
+    .live { display:flex; align-items:center; gap:8px; color:var(--muted) } .dot { width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 16px var(--lime) }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px } .card { background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px }
+    .label { color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.1em } .value { display:block;font-size:34px;font-weight:720;margin-top:8px }
+    section { margin-top:28px } h2 { font-size:16px;margin:0 0 12px } table { width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden }
+    th,td { padding:13px 16px;text-align:left;border-bottom:1px solid var(--line) } th { color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em } tr:last-child td { border:0 }
+    .pill { padding:4px 8px;border-radius:999px;background:#22342f;color:var(--lime);font-size:12px } .offline { color:var(--red) }
+    .error { border-color:#692f35;color:#ffb6b6 } @media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}header{align-items:start;flex-direction:column}}
+  </style>
+</head>
+<body><main>
+  <header><div><div class="eyebrow">Distributed operations</div><h1>Queue control room</h1></div><div class="live"><span class="dot"></span><span id="updated">Connecting…</span></div></header>
+  <div class="grid">
+    <div class="card"><span class="label">Ready</span><strong class="value" id="ready">—</strong></div>
+    <div class="card"><span class="label">Scheduled</span><strong class="value" id="scheduled">—</strong></div>
+    <div class="card"><span class="label">Running</span><strong class="value" id="running">—</strong></div>
+    <div class="card"><span class="label">Dead letter</span><strong class="value" id="dead">—</strong></div>
+  </div>
+  <section><h2>Workers</h2><table><thead><tr><th>Host</th><th>Status</th><th>Processed</th><th>Last heartbeat</th></tr></thead><tbody id="workers"></tbody></table></section>
+</main><script>
+async function refresh(){try{const [queues,workers]=await Promise.all([fetch('/queues').then(r=>r.json()),fetch('/workers').then(r=>r.json())]);const q=queues[0];
+  for(const [id,key] of [['ready','ready'],['scheduled','scheduled'],['running','running'],['dead','dead_letter']])document.getElementById(id).textContent=q[key];
+  document.getElementById('workers').innerHTML=workers.map(w=>`<tr><td>${w.hostname}</td><td><span class="pill ${w.status==='offline'?'offline':''}">${w.status}</span></td><td>${w.jobs_processed}</td><td>${new Date(w.last_heartbeat).toLocaleTimeString()}</td></tr>`).join('')||'<tr><td colspan="4">No workers registered</td></tr>';
+  document.getElementById('updated').textContent=`Live · updated ${new Date().toLocaleTimeString()}`;
+}catch(e){document.getElementById('updated').textContent='Dashboard unavailable';document.querySelectorAll('.card').forEach(x=>x.classList.add('error'))}}
+refresh();setInterval(refresh,3000);
+</script></body></html>
+
