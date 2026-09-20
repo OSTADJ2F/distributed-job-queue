@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: reliable-job-queue-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reliable-job-queue-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: reliable-job-queue-redis
+          property: connectionString
+      - key: WORKER_CONCURRENCY
+        value: "4"
+
+  - type: worker
+    name: reliable-job-queue-worker
+    runtime: docker
+    plan: 0.5c-512mb
+    numInstances: 2
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: python -m app.worker
+    gracefulShutdownPeriod: 75
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reliable-job-queue-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: reliable-job-queue-redis
+          property: connectionString
+      - key: WORKER_CONCURRENCY
+        value: "4"
+
+  - type: keyvalue
+    name: reliable-job-queue-redis
+    plan: 256mb
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+databases:
+  - name: reliable-job-queue-db
+    plan: 0.1c-256mb
+    databaseName: queue
+    user: queue
+    postgresMajorVersion: "17"
+    ipAllowList: []

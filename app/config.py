@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     backoff_schedule_seconds: tuple[int, ...] = (5, 30, 300)
     worker_concurrency: int = Field(default=4, ge=1, le=64)
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def select_async_postgres_driver(cls, value: object) -> object:
+        if isinstance(value, str) and value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
+
     @field_validator("backoff_schedule_seconds", mode="before")
     @classmethod
     def parse_backoff(cls, value: object) -> object:

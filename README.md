@@ -163,6 +163,8 @@ The built-in dashboard polls `/queues` and `/workers`. Prometheus/Grafana provid
 
 ## Deployment
 
+The repository includes `render.yaml`, a Render Blueprint that provisions the API, two workers, private persistent Key Value storage, and PostgreSQL. Push the repository to a Git host, create a Render Blueprint from it, review the paid worker and datastore plans, and apply it. Managed `postgresql://` URLs are automatically normalized to SQLAlchemy's asyncpg driver.
+
 The image runs either process without modification:
 
 ```bash
