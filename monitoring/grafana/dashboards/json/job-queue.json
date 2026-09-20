@@ -1,0 +1,20 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "panels": [
+    {"type":"stat","title":"Ready","targets":[{"expr":"job_queue_ready"}],"gridPos":{"h":6,"w":4,"x":0,"y":0}},
+    {"type":"stat","title":"Running","targets":[{"expr":"job_queue_running"}],"gridPos":{"h":6,"w":4,"x":4,"y":0}},
+    {"type":"stat","title":"Completed / min","targets":[{"expr":"job_queue_completed_last_minute"}],"gridPos":{"h":6,"w":4,"x":8,"y":0}},
+    {"type":"stat","title":"Failure ratio","targets":[{"expr":"job_queue_failure_ratio"}],"gridPos":{"h":6,"w":4,"x":12,"y":0}},
+    {"type":"stat","title":"Retries","targets":[{"expr":"job_queue_retry_count"}],"gridPos":{"h":6,"w":4,"x":16,"y":0}},
+    {"type":"stat","title":"Dead letter","targets":[{"expr":"job_queue_dead_letter"}],"gridPos":{"h":6,"w":4,"x":20,"y":0}}
+  ],
+  "schemaVersion": 40,
+  "tags": ["jobs", "queue"],
+  "templating": {"list": []},
+  "time": {"from":"now-15m","to":"now"},
+  "title": "Reliable Job Queue",
+  "uid": "reliable-job-queue",
+  "version": 1
+}
+

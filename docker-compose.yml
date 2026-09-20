@@ -1,0 +1,113 @@
+name: reliable-job-queue
+
+x-app-environment: &app-environment
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://queue:queue@postgres:5432/queue}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  QUEUE_NAME: ${QUEUE_NAME:-default}
+  QUEUE_DEPTH_LIMIT: ${QUEUE_DEPTH_LIMIT:-10000}
+  VISIBILITY_TIMEOUT_SECONDS: ${VISIBILITY_TIMEOUT_SECONDS:-60}
+  WORKER_HEARTBEAT_SECONDS: ${WORKER_HEARTBEAT_SECONDS:-5}
+  RECOVERY_INTERVAL_SECONDS: ${RECOVERY_INTERVAL_SECONDS:-10}
+  DEFAULT_JOB_TIMEOUT_SECONDS: ${DEFAULT_JOB_TIMEOUT_SECONDS:-30}
+  BACKOFF_SCHEDULE_SECONDS: ${BACKOFF_SCHEDULE_SECONDS:-5,30,300}
+  WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+
+x-worker: &worker
+  build: .
+  command: python -m app.worker
+  environment: *app-environment
+  restart: unless-stopped
+  depends_on:
+    api:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  api:
+    build: .
+    environment: *app-environment
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker-1:
+    <<: *worker
+    hostname: worker-1
+
+  worker-2:
+    <<: *worker
+    hostname: worker-2
+
+  worker-3:
+    <<: *worker
+    hostname: worker-3
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: queue
+      POSTGRES_USER: queue
+      POSTGRES_PASSWORD: queue
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queue -d queue"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    profiles: ["monitoring"]
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on: [api]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles: ["monitoring"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus]
+
+volumes:
+  postgres-data:
+  redis-data:
